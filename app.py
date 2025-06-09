@@ -3,7 +3,7 @@ import csv
 import json
 import os
 from datetime import datetime
-from PyQt5.QtCore import Qt, QSettings, QTimer
+from PyQt5.QtCore import Qt, QSettings, QTimer, QDate, QTime
 from PyQt5.QtGui import QIcon, QPixmap, QPalette, QColor, QFont
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QAction, QTableWidget, QTableWidgetItem, 
@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QGroupBox, QMenuBar, QMenu, QDialogButtonBox, QSpinBox, QSlider, QTabWidget,
     QCalendarWidget, QDateEdit, QTimeEdit, QDial, QLCDNumber, QFontComboBox,
     QScrollArea, QSplitter, QStackedWidget, QToolBar, QStatusBar, QDockWidget,
-    QHeaderView, QInputDialog, QShortcut
+    QHeaderView, QInputDialog, QShortcut, QActionGroup, QTextBrowser
 )
 
 # Constants
@@ -21,14 +21,47 @@ INITIAL_NEW_ROWS = 50
 INITIAL_NEW_COLS = 50
 MAX_RECENT_FILES = 10
 
-# Django-like color scheme
-DJANGO_GREEN = "#092e20"
-DJANGO_LIGHT_GREEN = "#6d9f8c"
-TABLE_DARK_BG = "#1e1e1e"
-TABLE_DARK_FG = "#d4d4d4"
-TABLE_GRID_COLOR = "#3c3c3c"
-TABLE_SELECTION_BG = "#264f78"
-TABLE_ALTERNATE_BG = "#2d2d2d"
+# Theme configurations
+THEMES = {
+    "Django": {
+        "name": "Django",
+        "main_bg": "#092e20",
+        "main_fg": "white",
+        "accent": "#44b78b",
+        "table_bg": "#1e1e1e",
+        "table_fg": "#d4d4d4",
+        "table_grid": "#3c3c3c",
+        "table_selection": "#264f78",
+        "table_alternate": "#2d2d2d",
+        "menu_bg": "#092e20",
+        "menu_hover": "#44b78b",
+        "input_bg": "#0d4029",
+        "button_bg": "#44b78b",
+        "button_hover": "#5ec49e",
+        "scrollbar_bg": "#092e20",
+        "scrollbar_handle": "#44b78b",
+        "scrollbar_handle_hover": "#5ec49e"
+    },
+    "Windows 11": {
+        "name": "Windows 11",
+        "main_bg": "#f3f3f3",
+        "main_fg": "#202020",
+        "accent": "#0078d4",
+        "table_bg": "#ffffff",
+        "table_fg": "#202020",
+        "table_grid": "#e5e5e5",
+        "table_selection": "#cce8ff",
+        "table_alternate": "#f9f9f9",
+        "menu_bg": "#ffffff",
+        "menu_hover": "#e5f3ff",
+        "input_bg": "#ffffff",
+        "button_bg": "#0078d4",
+        "button_hover": "#106ebe",
+        "scrollbar_bg": "#f3f3f3",
+        "scrollbar_handle": "#c1c1c1",
+        "scrollbar_handle_hover": "#a0a0a0"
+    }
+}
 
 class FindReplaceDialog(QDialog):
     def __init__(self, parent=None):
@@ -96,7 +129,7 @@ class SettingsDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Settings (Demo)")
         self.setAccessibleName("Settings Dialog")
-        self.resize(800, 600)
+        self.resize(900, 700)
         
         main_layout = QVBoxLayout()
         
@@ -133,6 +166,22 @@ class SettingsDialog(QDialog):
         basic_layout.addWidget(QLabel("Edit Field Example:"))
         basic_layout.addWidget(edit)
         
+        # SpinBox
+        spinbox = QSpinBox()
+        spinbox.setAccessibleName("Sample SpinBox")
+        spinbox.setRange(0, 100)
+        spinbox.setValue(50)
+        basic_layout.addWidget(QLabel("SpinBox Example:"))
+        basic_layout.addWidget(spinbox)
+        
+        # Slider
+        slider = QSlider(Qt.Horizontal)
+        slider.setAccessibleName("Sample Slider")
+        slider.setRange(0, 100)
+        slider.setValue(30)
+        basic_layout.addWidget(QLabel("Slider Example:"))
+        basic_layout.addWidget(slider)
+        
         # RadioButton Group
         radio_group = QGroupBox("RadioButton Example")
         radio_group.setAccessibleName("Radio Button Group")
@@ -152,10 +201,7 @@ class SettingsDialog(QDialog):
         # ProgressBar
         progress = QProgressBar()
         progress.setAccessibleName("Sample Progress Bar")
-        for i in range(5):
-            progress.setRange(0, 100)
-            progress.setFormat(f"Progress: {i * 20}%")
-            QTimer.singleShot(i * 1000, lambda p=progress, v=i * 20: p.setValue(v))
+        progress.setValue(45)
         basic_layout.addWidget(QLabel("ProgressBar Example:"))
         basic_layout.addWidget(progress)
         
@@ -174,7 +220,7 @@ class SettingsDialog(QDialog):
         for i in range(3):
             for j in range(3):
                 item = QTableWidgetItem(f"Cell {i},{j}")
-                item.setData(Qt.AccessibleTextRole, f"Cell {i+1},{j+1}")
+                item.setData(Qt.AccessibleTextRole, f"DataGrid Cell {i+1},{j+1}")
                 datagrid.setItem(i, j, item)
         advanced_layout.addWidget(QLabel("DataGrid Example:"))
         advanced_layout.addWidget(datagrid)
@@ -208,7 +254,110 @@ class SettingsDialog(QDialog):
         advanced_tab.setLayout(advanced_layout)
         tab_widget.addTab(advanced_tab, "Advanced Controls")
         
-        # Tab 3: Image and Menu
+        # Tab 3: Date and Time Controls
+        datetime_tab = QWidget()
+        datetime_layout = QVBoxLayout()
+        
+        # CalendarWidget
+        calendar = QCalendarWidget()
+        calendar.setAccessibleName("Sample Calendar Widget")
+        datetime_layout.addWidget(QLabel("Calendar Widget Example:"))
+        datetime_layout.addWidget(calendar)
+        
+        # DateEdit
+        date_edit = QDateEdit()
+        date_edit.setAccessibleName("Sample Date Edit")
+        date_edit.setDate(QDate.currentDate())
+        date_edit.setCalendarPopup(True)
+        datetime_layout.addWidget(QLabel("Date Edit Example:"))
+        datetime_layout.addWidget(date_edit)
+        
+        # TimeEdit
+        time_edit = QTimeEdit()
+        time_edit.setAccessibleName("Sample Time Edit")
+        time_edit.setTime(QTime.currentTime())
+        datetime_layout.addWidget(QLabel("Time Edit Example:"))
+        datetime_layout.addWidget(time_edit)
+        
+        datetime_layout.addStretch()
+        datetime_tab.setLayout(datetime_layout)
+        tab_widget.addTab(datetime_tab, "Date/Time Controls")
+        
+        # Tab 4: Special Controls
+        special_tab = QWidget()
+        special_layout = QVBoxLayout()
+        
+        # Dial
+        dial = QDial()
+        dial.setAccessibleName("Sample Dial")
+        dial.setRange(0, 100)
+        dial.setValue(75)
+        special_layout.addWidget(QLabel("Dial Example:"))
+        special_layout.addWidget(dial)
+        
+        # LCD Number
+        lcd = QLCDNumber()
+        lcd.setAccessibleName("Sample LCD Number")
+        lcd.display(42)
+        special_layout.addWidget(QLabel("LCD Number Example:"))
+        special_layout.addWidget(lcd)
+        
+        # Font ComboBox
+        font_combo = QFontComboBox()
+        font_combo.setAccessibleName("Sample Font ComboBox")
+        special_layout.addWidget(QLabel("Font ComboBox Example:"))
+        special_layout.addWidget(font_combo)
+        
+        special_layout.addStretch()
+        special_tab.setLayout(special_layout)
+        tab_widget.addTab(special_tab, "Special Controls")
+        
+        # Tab 5: Container Controls
+        container_tab = QWidget()
+        container_layout = QVBoxLayout()
+        
+        # ScrollArea
+        scroll_area = QScrollArea()
+        scroll_area.setAccessibleName("Sample Scroll Area")
+        scroll_content = QWidget()
+        scroll_content_layout = QVBoxLayout()
+        for i in range(10):
+            scroll_content_layout.addWidget(QLabel(f"Scrollable content line {i+1}"))
+        scroll_content.setLayout(scroll_content_layout)
+        scroll_area.setWidget(scroll_content)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setMaximumHeight(150)
+        container_layout.addWidget(QLabel("Scroll Area Example:"))
+        container_layout.addWidget(scroll_area)
+        
+        # Splitter
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.setAccessibleName("Sample Splitter")
+        left_widget = QTextEdit("Left panel")
+        left_widget.setAccessibleName("Splitter Left Panel")
+        right_widget = QTextEdit("Right panel")
+        right_widget.setAccessibleName("Splitter Right Panel")
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        container_layout.addWidget(QLabel("Splitter Example:"))
+        container_layout.addWidget(splitter)
+        
+        # StackedWidget
+        stacked = QStackedWidget()
+        stacked.setAccessibleName("Sample Stacked Widget")
+        page1 = QLabel("Page 1 Content")
+        page1.setAccessibleName("Stacked Widget Page 1")
+        page2 = QLabel("Page 2 Content")
+        page2.setAccessibleName("Stacked Widget Page 2")
+        stacked.addWidget(page1)
+        stacked.addWidget(page2)
+        container_layout.addWidget(QLabel("Stacked Widget Example:"))
+        container_layout.addWidget(stacked)
+        
+        container_tab.setLayout(container_layout)
+        tab_widget.addTab(container_tab, "Container Controls")
+        
+        # Tab 6: Visual Controls and Bars
         visual_tab = QWidget()
         visual_layout = QVBoxLayout()
         
@@ -216,10 +365,20 @@ class SettingsDialog(QDialog):
         image_label = QLabel()
         image_label.setAccessibleName("Sample Image")
         pixmap = QPixmap(100, 100)
-        pixmap.fill(QColor(TABLE_DARK_FG))
+        pixmap.fill(QColor("#44b78b"))
         image_label.setPixmap(pixmap)
         visual_layout.addWidget(QLabel("Image Example:"))
         visual_layout.addWidget(image_label)
+        
+        # ToolBar
+        toolbar = QToolBar()
+        toolbar.setAccessibleName("Sample Tool Bar")
+        toolbar.addAction("Tool 1")
+        toolbar.addAction("Tool 2")
+        toolbar.addSeparator()
+        toolbar.addAction("Tool 3")
+        visual_layout.addWidget(QLabel("ToolBar Example:"))
+        visual_layout.addWidget(toolbar)
         
         # Menu (MenuBar with Menu and MenuItem)
         menubar = QMenuBar()
@@ -275,7 +434,7 @@ class CsvTableWidget(QTableWidget):
         self.setAlternatingRowColors(True)
         self.setEditTriggers(QTableWidget.DoubleClicked | QTableWidget.SelectedClicked)
         self.setSelectionBehavior(QTableWidget.SelectItems)
-        self.setSelectionMode(QTableWidget.ExtendedSelection)  # Allow multiple selection
+        self.setSelectionMode(QTableWidget.ExtendedSelection)
         self.setCornerButtonEnabled(True)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setTabKeyNavigation(True)
@@ -285,39 +444,36 @@ class CsvTableWidget(QTableWidget):
         self.setHorizontalScrollMode(QTableWidget.ScrollPerPixel)
         self.setVerticalScrollMode(QTableWidget.ScrollPerPixel)
         
-        # Apply dark theme to table
-        self.apply_dark_theme()
-        
         self.new_table()
 
-    def apply_dark_theme(self):
+    def apply_theme(self, theme):
         style = f"""
         QTableWidget {{
-            background-color: {TABLE_DARK_BG};
-            color: {TABLE_DARK_FG};
-            gridline-color: {TABLE_GRID_COLOR};
-            border: 1px solid {TABLE_GRID_COLOR};
+            background-color: {theme['table_bg']};
+            color: {theme['table_fg']};
+            gridline-color: {theme['table_grid']};
+            border: 1px solid {theme['table_grid']};
         }}
         QTableWidget::item {{
-            background-color: {TABLE_DARK_BG};
-            color: {TABLE_DARK_FG};
-            border: 1px solid {TABLE_GRID_COLOR};
+            background-color: {theme['table_bg']};
+            color: {theme['table_fg']};
+            border: 1px solid {theme['table_grid']};
         }}
         QTableWidget::item:selected {{
-            background-color: {TABLE_SELECTION_BG};
+            background-color: {theme['table_selection']};
         }}
         QTableWidget::item:alternate {{
-            background-color: {TABLE_ALTERNATE_BG};
+            background-color: {theme['table_alternate']};
         }}
         QHeaderView::section {{
-            background-color: {TABLE_ALTERNATE_BG};
-            color: {TABLE_DARK_FG};
-            border: 1px solid {TABLE_GRID_COLOR};
+            background-color: {theme['table_alternate']};
+            color: {theme['table_fg']};
+            border: 1px solid {theme['table_grid']};
             padding: 4px;
         }}
         QTableCornerButton::section {{
-            background-color: {TABLE_ALTERNATE_BG};
-            border: 1px solid {TABLE_GRID_COLOR};
+            background-color: {theme['table_alternate']};
+            border: 1px solid {theme['table_grid']};
         }}
         """
         self.setStyleSheet(style)
@@ -383,14 +539,14 @@ class MainWindow(QMainWindow):
         self.setAccessibleName("CSV Table Viewer Main Window")
         self.resize(1200, 800)
         
-        # Apply Django-like theme
-        self.apply_django_theme()
-        
-        # Settings for recent files
-        self.settings = QSettings("CSVViewer", "RecentFiles")
+        # Settings
+        self.settings = QSettings("CSVViewer", "AppSettings")
         self.recent_files = self.settings.value("recentFiles", []) or []
+        self.current_theme_name = self.settings.value("theme", "Django") or "Django"
+        self.current_theme = THEMES[self.current_theme_name]
         self.current_file_path = None
         
+        # Create widgets before applying theme
         self.table = CsvTableWidget(self)
 
         self.h_scrollbar = QScrollBar(Qt.Horizontal)
@@ -433,6 +589,10 @@ class MainWindow(QMainWindow):
         container.setLayout(grid_layout)
         self.setCentralWidget(container)
         
+        # Create dock widget example
+        self.create_dock_widget()
+        
+        # Create menus
         self.create_menus()
         
         # Status bar
@@ -442,128 +602,165 @@ class MainWindow(QMainWindow):
         
         # Find/Replace dialog
         self.find_dialog = None
+        
+        # Apply theme
+        self.apply_theme(self.current_theme_name)
 
-    def apply_django_theme(self):
+    def create_dock_widget(self):
+        dock = QDockWidget("Information Panel", self)
+        dock.setAccessibleName("Information Dock Widget")
+        
+        dock_content = QTextBrowser()
+        dock_content.setAccessibleName("Dock Widget Content")
+        dock_content.setHtml("""
+        <h3>Welcome to CSV Table Viewer</h3>
+        <p>This panel demonstrates a DockWidget component.</p>
+        <p>You can drag this panel around or close it.</p>
+        """)
+        
+        dock.setWidget(dock_content)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+    def apply_theme(self, theme_name):
+        self.current_theme_name = theme_name
+        self.current_theme = THEMES[theme_name]
+        theme = self.current_theme
+        
+        # Apply theme to table
+        self.table.apply_theme(theme)
+        
+        # Windows 11 specific adjustments
+        is_windows_11 = theme_name == "Windows 11"
+        button_fg = "black" if is_windows_11 else "white"
+        
         style = f"""
         QMainWindow {{
-            background-color: {DJANGO_GREEN};
+            background-color: {theme['main_bg']};
+            color: {theme['main_fg']};
+        }}
+        QWidget {{
+            background-color: {theme['main_bg']};
+            color: {theme['main_fg']};
         }}
         QMenuBar {{
-            background-color: {DJANGO_GREEN};
-            color: white;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            background-color: {theme['menu_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
         }}
         QMenuBar::item {{
             background-color: transparent;
             padding: 4px 12px;
+            color: {theme['main_fg']};
         }}
         QMenuBar::item:selected {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['menu_hover']};
         }}
         QMenu {{
-            background-color: {DJANGO_GREEN};
-            color: white;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            background-color: {theme['menu_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
         }}
         QMenu::item {{
             padding: 4px 20px;
+            color: {theme['main_fg']};
         }}
         QMenu::item:selected {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['menu_hover']};
         }}
         QScrollBar:vertical {{
-            background-color: {DJANGO_GREEN};
+            background-color: {theme['scrollbar_bg']};
             width: 15px;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            border: 1px solid {theme['accent']};
         }}
         QScrollBar::handle:vertical {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['scrollbar_handle']};
             min-height: 20px;
             border-radius: 2px;
         }}
         QScrollBar::handle:vertical:hover {{
-            background-color: #5ec49e;
+            background-color: {theme['scrollbar_handle_hover']};
         }}
         QScrollBar:horizontal {{
-            background-color: {DJANGO_GREEN};
+            background-color: {theme['scrollbar_bg']};
             height: 15px;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            border: 1px solid {theme['accent']};
         }}
         QScrollBar::handle:horizontal {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['scrollbar_handle']};
             min-width: 20px;
             border-radius: 2px;
         }}
         QScrollBar::handle:horizontal:hover {{
-            background-color: #5ec49e;
+            background-color: {theme['scrollbar_handle_hover']};
         }}
         QScrollBar::add-line, QScrollBar::sub-line {{
             background: none;
         }}
-        QStatusBar {{
-            background-color: {DJANGO_GREEN};
-            color: white;
-            border-top: 1px solid {DJANGO_LIGHT_GREEN};
+        QScrollBar::add-page, QScrollBar::sub-page {{
+            background: {theme['scrollbar_bg']};
         }}
-        QWidget {{
-            background-color: {DJANGO_GREEN};
-            color: white;
+        QStatusBar {{
+            background-color: {theme['main_bg']};
+            color: {theme['main_fg']};
+            border-top: 1px solid {theme['accent']};
         }}
         QPushButton {{
-            background-color: {DJANGO_LIGHT_GREEN};
-            color: white;
+            background-color: {theme['button_bg']};
+            color: {button_fg};
             border: none;
             padding: 5px 15px;
             border-radius: 3px;
         }}
         QPushButton:hover {{
-            background-color: #5ec49e;
+            background-color: {theme['button_hover']};
         }}
         QLineEdit, QComboBox, QSpinBox {{
-            background-color: #0d4029;
-            color: white;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            background-color: {theme['input_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
             padding: 3px;
         }}
         QCheckBox, QRadioButton {{
-            color: white;
+            color: {theme['main_fg']};
         }}
         QDialog {{
-            background-color: {DJANGO_GREEN};
-            color: white;
+            background-color: {theme['main_bg']};
+            color: {theme['main_fg']};
         }}
         QTabWidget::pane {{
-            background-color: {DJANGO_GREEN};
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            background-color: {theme['main_bg']};
+            border: 1px solid {theme['accent']};
         }}
         QTabBar::tab {{
-            background-color: #0d4029;
-            color: white;
+            background-color: {theme['input_bg']};
+            color: {theme['main_fg']};
             padding: 5px 10px;
             margin-right: 2px;
         }}
         QTabBar::tab:selected {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['accent']};
+            color: white;
         }}
         QTreeWidget, QListWidget {{
-            background-color: #0d4029;
-            color: white;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            background-color: {theme['input_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
         }}
         QTreeWidget::item:selected, QListWidget::item:selected {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['accent']};
         }}
         QProgressBar {{
-            background-color: #0d4029;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            background-color: {theme['input_bg']};
+            border: 1px solid {theme['accent']};
             text-align: center;
+            color: {theme['main_fg']};
         }}
         QProgressBar::chunk {{
-            background-color: {DJANGO_LIGHT_GREEN};
+            background-color: {theme['accent']};
         }}
         QGroupBox {{
-            color: white;
-            border: 1px solid {DJANGO_LIGHT_GREEN};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
             margin-top: 10px;
             padding-top: 10px;
         }}
@@ -572,8 +769,66 @@ class MainWindow(QMainWindow):
             left: 10px;
             padding: 0 5px;
         }}
+        QDockWidget {{
+            background-color: {theme['main_bg']};
+            color: {theme['main_fg']};
+        }}
+        QDockWidget::title {{
+            background-color: {theme['main_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
+            padding: 5px;
+        }}
+        QTextBrowser {{
+            background-color: {theme['input_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
+        }}
+        QHeaderView::section {{
+            background-color: {theme['input_bg']};
+            color: {theme['main_fg']};
+            border: 1px solid {theme['accent']};
+            padding: 4px;
+        }}
         """
+        
+        # Apply stylesheet
         self.setStyleSheet(style)
+        
+        # Update window frame color (platform-specific)
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                from ctypes import wintypes
+                
+                # Dark title bar for dark themes
+                if theme_name == "Django":
+                    # Use dark mode
+                    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                    hwnd = int(self.winId())
+                    value = ctypes.c_int(1)  # TRUE for dark mode
+                    ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                        hwnd, 
+                        DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        ctypes.byref(value),
+                        ctypes.sizeof(value)
+                    )
+                else:
+                    # Use light mode
+                    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                    hwnd = int(self.winId())
+                    value = ctypes.c_int(0)  # FALSE for light mode
+                    ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                        hwnd, 
+                        DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        ctypes.byref(value),
+                        ctypes.sizeof(value)
+                    )
+            except:
+                pass  # Fallback if Windows API is not available
+        
+        # Save theme preference
+        self.settings.setValue("theme", theme_name)
 
     def create_menus(self):
         menubar = self.menuBar()
@@ -600,20 +855,17 @@ class MainWindow(QMainWindow):
         
         # Recent Files submenu
         self.recent_menu = QMenu("Recent Files", self)
-        self.recent_menu.setAccessibleName("Recent Files Menu")
         file_menu.addMenu(self.recent_menu)
         self.update_recent_files_menu()
         
         file_menu.addSeparator()
         
         save_action = QAction("&Save", self)
-        # save_action.setAccessibleName("Save File Action")
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_file)
         file_menu.addAction(save_action)
         
         save_as_action = QAction("Save &As...", self)
-        # save_as_action.setAccessibleName("Save As Action")
         save_as_action.setShortcut("Ctrl+Shift+S")
         save_as_action.triggered.connect(self.save_as_file)
         file_menu.addAction(save_as_action)
@@ -621,7 +873,6 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
 
         exit_action = QAction("E&xit", self)
-        # exit_action.setAccessibleName("Exit Action")
         exit_action.setShortcut("Alt+F4")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
@@ -631,13 +882,11 @@ class MainWindow(QMainWindow):
         edit_menu.setAccessibleName("Edit Menu")
         
         copy_action = QAction("&Copy", self)
-        # copy_action.setAccessibleName("Copy Action")
         copy_action.setShortcut("Ctrl+C")
         copy_action.triggered.connect(self.copy_cells)
         edit_menu.addAction(copy_action)
 
         paste_action = QAction("&Paste", self)
-        # paste_action.setAccessibleName("Paste Action")
         paste_action.setShortcut("Ctrl+V")
         paste_action.triggered.connect(self.paste_cells)
         edit_menu.addAction(paste_action)
@@ -645,7 +894,6 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         
         select_all_action = QAction("Select &All", self)
-        # select_all_action.setAccessibleName("Select All Action")
         select_all_action.setShortcut("Ctrl+A")
         select_all_action.triggered.connect(self.select_all)
         edit_menu.addAction(select_all_action)
@@ -653,19 +901,16 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         
         find_action = QAction("&Find...", self)
-        # find_action.setAccessibleName("Find Action")
         find_action.setShortcut("Ctrl+F")
         find_action.triggered.connect(self.show_find_dialog)
         edit_menu.addAction(find_action)
         
         find_next_action = QAction("Find &Next", self)
-        # find_next_action.setAccessibleName("Find Next Action")
         find_next_action.setShortcut("F3")
         find_next_action.triggered.connect(self.find_next)
         edit_menu.addAction(find_next_action)
         
         replace_action = QAction("&Replace...", self)
-        # replace_action.setAccessibleName("Replace Action")
         replace_action.setShortcut("Ctrl+H")
         replace_action.triggered.connect(self.show_find_dialog)
         edit_menu.addAction(replace_action)
@@ -675,25 +920,83 @@ class MainWindow(QMainWindow):
         view_menu.setAccessibleName("View Menu")
         
         resize_action = QAction("&Resize Columns to Contents", self)
-        # resize_action.setAccessibleName("Resize Columns Action")
         resize_action.triggered.connect(self.table.resizeColumnsToContents)
         view_menu.addAction(resize_action)
+        
+        view_menu.addSeparator()
+        
+        # Theme submenu
+        theme_menu = QMenu("&Theme", self)
+        theme_menu.setAccessibleName("Theme Menu")
+        
+        theme_group = QActionGroup(self)
+        for theme_name in THEMES.keys():
+            theme_action = QAction(theme_name, self)
+            theme_action.setCheckable(True)
+            theme_action.setChecked(theme_name == self.current_theme_name)
+            theme_action.triggered.connect(lambda checked, name=theme_name: self.apply_theme(name))
+            theme_group.addAction(theme_action)
+            theme_menu.addAction(theme_action)
+        
+        view_menu.addMenu(theme_menu)
 
         # Help Menu
         help_menu = menubar.addMenu("&Help")
         help_menu.setAccessibleName("Help Menu")
         
         settings_action = QAction("&Settings", self)
-        # settings_action.setAccessibleName("Settings Action")
         settings_action.triggered.connect(self.show_settings)
         help_menu.addAction(settings_action)
         
         help_menu.addSeparator()
         
+        # Shortcut demonstration
+        shortcut_action = QAction("&Keyboard Shortcuts", self)
+        shortcut_action.triggered.connect(self.show_shortcuts)
+        help_menu.addAction(shortcut_action)
+        
+        help_menu.addSeparator()
+        
         about_action = QAction("&About", self)
-        # about_action.setAccessibleName("About Action")
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
+        
+        # Create custom shortcuts
+        self.create_shortcuts()
+
+    def create_shortcuts(self):
+        # Additional custom shortcuts
+        shortcut1 = QShortcut("Ctrl+Shift+F", self)
+        shortcut1.setObjectName("Advanced Find Shortcut")
+        shortcut1.activated.connect(lambda: self.statusBar().showMessage("Advanced Find (Ctrl+Shift+F) pressed"))
+        
+        shortcut2 = QShortcut("F5", self)
+        shortcut2.setObjectName("Refresh Shortcut")
+        shortcut2.activated.connect(lambda: self.statusBar().showMessage("Refresh (F5) pressed"))
+
+    def show_shortcuts(self):
+        shortcuts_text = """
+        <h3>Keyboard Shortcuts</h3>
+        <table>
+        <tr><td><b>Ctrl+N</b></td><td>New file</td></tr>
+        <tr><td><b>Ctrl+O</b></td><td>Open file</td></tr>
+        <tr><td><b>Ctrl+S</b></td><td>Save file</td></tr>
+        <tr><td><b>Ctrl+Shift+S</b></td><td>Save as</td></tr>
+        <tr><td><b>Ctrl+F</b></td><td>Find</td></tr>
+        <tr><td><b>F3</b></td><td>Find next</td></tr>
+        <tr><td><b>Ctrl+H</b></td><td>Replace</td></tr>
+        <tr><td><b>Ctrl+A</b></td><td>Select all</td></tr>
+        <tr><td><b>Ctrl+C</b></td><td>Copy</td></tr>
+        <tr><td><b>Ctrl+V</b></td><td>Paste</td></tr>
+        <tr><td><b>Ctrl+Shift+F</b></td><td>Advanced find (demo)</td></tr>
+        <tr><td><b>F5</b></td><td>Refresh (demo)</td></tr>
+        </table>
+        """
+        msg = QMessageBox()
+        msg.setWindowTitle("Keyboard Shortcuts")
+        msg.setTextFormat(Qt.RichText)
+        msg.setText(shortcuts_text)
+        msg.exec_()
 
     def new_table(self):
         self.table.new_table()
@@ -752,7 +1055,7 @@ class MainWindow(QMainWindow):
         for i, file_path in enumerate(self.recent_files):
             if os.path.exists(file_path):
                 action = QAction(f"{i+1}. {os.path.basename(file_path)}", self)
-                # action.setAccessibleName(f"Recent File {i+1}")
+                action.setAccessibleName(f"Recent File {i+1}")
                 action.setData(file_path)
                 action.triggered.connect(lambda checked, path=file_path: self.open_recent_file(path))
                 self.recent_menu.addAction(action)
@@ -788,7 +1091,7 @@ class MainWindow(QMainWindow):
                 if current_row + i < self.table.rowCount():
                     item = self.table.item(current_row + i, current_col)
                     if item:
-                        item.setText(line.split('\t')[0])  # Handle tab-separated values
+                        item.setText(line.split('\t')[0])
 
     def select_all(self):
         self.table.selectAll()
@@ -916,20 +1219,37 @@ class MainWindow(QMainWindow):
         dialog.exec_()
 
     def show_about(self):
-        QMessageBox.about(self, "About CSV Table Viewer",
-                          "CSV Table Viewer\n\n"
-                          "An accessible, automatable table UI for large CSV files.\n"
-                          "Built with PyQt5.\n\n"
-                          "Features:\n"
-                          "• Full accessibility support for UI automation\n"
-                          "• Dark theme inspired by Django\n"
-                          "• Find and replace functionality\n"
-                          "• Recent files tracking\n"
-                          "• Multiple window support")
+        about_text = f"""
+        <h3>CSV Table Viewer</h3>
+        <p>An accessible, automatable table UI for large CSV files.</p>
+        <p>Built with PyQt5.</p>
+        <p><b>Current Theme:</b> {self.current_theme_name}</p>
+        <h4>Features:</h4>
+        <ul>
+        <li>Full accessibility support for UI automation</li>
+        <li>Multiple themes (Django and Windows 11)</li>
+        <li>Find and replace functionality</li>
+        <li>Recent files tracking</li>
+        <li>Multiple window support</li>
+        <li>Comprehensive UI component demonstrations</li>
+        </ul>
+        """
+        msg = QMessageBox()
+        msg.setWindowTitle("About CSV Table Viewer")
+        msg.setTextFormat(Qt.RichText)
+        msg.setText(about_text)
+        msg.exec_()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle('Fusion')  # Use Fusion style for better theming
+    
+    # Create input dialog demonstration
+    text, ok = QInputDialog.getText(None, "Welcome", "Enter your name (optional):", 
+                                   QLineEdit.Normal, "")
+    if ok and text:
+        print(f"Welcome, {text}!")
+    
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
