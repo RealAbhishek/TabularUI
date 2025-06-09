@@ -1,0 +1,11 @@
+build/
+.vscode/
+dist/
+wf.png
+*.ui
+*.pyc
+*.pyo
+*.pyd
+*.pyo
+*.pdb
+*.swp
