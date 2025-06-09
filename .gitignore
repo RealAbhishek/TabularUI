@@ -3,7 +3,6 @@ build/
 dist/
 wf.png
 *.ui
-*.spec
 *.pyc
 *.pyo
 *.pyd
