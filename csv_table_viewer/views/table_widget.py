@@ -22,11 +22,10 @@ class CsvTableWidget(QTableWidget):
     def __init__(self, csv_model: CSVModel, parent=None):
         super().__init__(parent)
         self._csv_model = csv_model
+        print(f"DEBUG: CsvTableWidget.__init__ - CSVModel ID: {id(self._csv_model)}") # DEBUG
         self._current_theme = None
         
-        # Setup table
         self._setup_table()
-        
         # Connect to model
         self._csv_model.attach(self._on_model_changed)
     
@@ -82,9 +81,9 @@ class CsvTableWidget(QTableWidget):
         for row_idx, row_data in enumerate(data):
             for col_idx, value in enumerate(row_data):
                 item = QTableWidgetItem(value)
-                # item.setFlags(
-                #     Qt.ItemFlags.ItemIsSelectable | Qt.ItemFlags.ItemIsEnabled | Qt.ItemFlags.ItemIsEditable
-                # )
+                item.setFlags(item.flags() |
+                    Qt.ItemFlags.ItemIsSelectable | Qt.ItemFlags.ItemIsEnabled | Qt.ItemFlags.ItemIsEditable
+                )
                 item.setData(Qt.ItemDataRole.AccessibleTextRole, f"Cell_{row_idx+1}_{col_idx+1}")
                 self.setItem(row_idx, col_idx, item)
         
@@ -139,6 +138,11 @@ class CsvTableWidget(QTableWidget):
         self._current_theme = theme_name
         self.update_theme()
     
+    def _on_item_changed(self, item: QTableWidgetItem):
+        """Handle item changes with protection against circular updates"""
+        if item and not getattr(self, '_updating', False):
+            self._csv_model.set_cell(item.row(), item.column(), item.text())
+
     # Override item change to update model
     def itemChanged(self, item: QTableWidgetItem):
         """Handle item changes"""
