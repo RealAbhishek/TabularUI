@@ -1250,5 +1250,7 @@ if __name__ == "__main__":
     #     print(f"Welcome, {text}!")
     
     window = MainWindow()
+    dialog = SettingsDialog()
+    dialog.show()
     window.show()
     sys.exit(app.exec_())

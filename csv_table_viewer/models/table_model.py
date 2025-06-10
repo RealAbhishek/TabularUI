@@ -69,13 +69,7 @@ class TableModel(QAbstractTableModel):
         self._csv_model.set_cell(row, col, str(value))
         self.dataChanged.emit(index, index, [role])
         return True
-    
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        """Get item flags"""
-        if not index.isValid():
-            return Qt.ItemFlags.NoItemFlags
 
-        return (Qt.ItemFlags.ItemIsEnabled) | (Qt.ItemFlags.ItemIsSelectable) | (Qt.ItemFlags.ItemIsEditable)
 
     def headerData(self, section: int, orientation: Qt.Orientation,
                    role: int = Qt.ItemDataRole.DisplayRole) -> Any:
@@ -93,3 +87,13 @@ class TableModel(QAbstractTableModel):
                 return f"Row Header {section + 1}"
         
         return None
+    
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        """
+        This method tells the view what is allowed for each cell.
+        This is the key to enabling editing.
+        """
+        if not index.isValid():
+            return Qt.ItemFlags()        # No flags for invalid index
+        # selected, enabled, and edited.
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
