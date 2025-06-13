@@ -77,7 +77,7 @@ class CSVModel:
     
     def new_document(self, rows: int, cols: int) -> None:
         """Create a new empty document"""
-        self._data = [[''] * cols for _ in range(rows)]
+        self._data = [[f"Cell_{r + 1}_{c + 1}" for c in range(cols)] for r in range(rows)]
         self._file_path = None
         self._modified = False
         logger.info(f"Created new document: {rows}x{cols}")
@@ -100,7 +100,7 @@ class CSVModel:
             if self._data[row][col] != value:
                 self._data[row][col] = value
                 self._modified = True
-                self._notify_observers()
+                # self._notify_observers()
     
     def get_row_count(self) -> int:
         """Get number of rows"""

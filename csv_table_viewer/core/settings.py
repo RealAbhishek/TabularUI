@@ -118,3 +118,7 @@ class AppSettings:
     def set_window_state(self, state: QByteArray) -> None:
         """Save window state"""
         self._window_state = state
+
+    def get_icon(self) -> str:
+        """Get application icon path"""
+        return "../wf.ico"

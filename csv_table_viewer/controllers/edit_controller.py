@@ -5,7 +5,8 @@ Edit operations controller
 import re
 import logging
 from typing import Optional, Tuple, List
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QApplication
+from PyQt5.QtWidgets import QApplication, QTableView
+from PyQt5.QtCore import QItemSelectionModel
 
 from models import CSVModel
 
@@ -19,199 +20,176 @@ class EditController:
         self._csv_model = csv_model
         self._last_search_pos = (0, 0)
     
-    def copy_cells(self, table: QTableWidget) -> int:
-        """Copy selected cells to clipboard"""
-        selected_items = table.selectedItems()
-        if not selected_items:
+    def copy_cells(self, table: QTableView) -> int:
+        """Copy selected cells to clipboard using QTableView's selection model."""
+        selection_model = table.selectionModel()
+        if not selection_model.hasSelection():
             return 0
         
-        # Get selection bounds
-        rows = sorted(set(item.row() for item in selected_items))
-        cols = sorted(set(item.column() for item in selected_items))
-        
-        # Build clipboard text
+        indexes = selection_model.selectedIndexes()
+        if not indexes:
+            return 0
+
+        min_row = min(index.row() for index in indexes)
+        max_row = max(index.row() for index in indexes)
+        min_col = min(index.column() for index in indexes)
+        max_col = max(index.column() for index in indexes)
+
         clipboard_text = []
-        for row in rows:
+        for row in range(min_row, max_row + 1):
             row_text = []
-            for col in cols:
-                item = table.item(row, col)
-                if item and item.isSelected():
-                    row_text.append(item.text())
+            for col in range(min_col, max_col + 1):
+                index = table.model().index(row, col)
+                if index in indexes:
+                    # Use the model to get data
+                    cell_data = table.model().data(index) or ""
+                    row_text.append(cell_data)
                 else:
                     row_text.append("")
             clipboard_text.append("\t".join(row_text))
+
+        QApplication.clipboard().setText("\n".join(clipboard_text))
         
-        # Copy to clipboard
-        clipboard = QApplication.clipboard()
-        if clipboard:
-            clipboard.setText("\n".join(clipboard_text))
-        
-        logger.info(f"Copied {len(selected_items)} cells")
-        return len(selected_items)
+        logger.info(f"Copied {len(indexes)} cells")
+        return len(indexes)
     
-    def paste_cells(self, table: QTableWidget) -> int:
-        """Paste cells from clipboard"""
+    def paste_cells(self, table: QTableView) -> int:
+        """Paste cells from clipboard into a QTableView."""
         clipboard = QApplication.clipboard()
         if not clipboard:
             return 0
-        text = clipboard.text()
         
+        text = clipboard.text()
         if not text:
             return 0
         
-        current_item = table.currentItem()
-        if not current_item:
+        start_index = table.currentIndex()
+        if not start_index.isValid():
             return 0
         
-        start_row = current_item.row()
-        start_col = current_item.column()
-        
-        # Parse clipboard text
+        start_row = start_index.row()
+        start_col = start_index.column()
+        model = table.model()
+
         lines = text.strip().split('\n')
         count = 0
         
         for i, line in enumerate(lines):
-            if start_row + i >= table.rowCount():
+            row = start_row + i
+            if row >= model.rowCount():
                 break
             
             cells = line.split('\t')
             for j, cell_text in enumerate(cells):
-                if start_col + j >= table.columnCount():
+                col = start_col + j
+                if col >= model.columnCount():
                     break
                 
-                item = table.item(start_row + i, start_col + j)
-                if item:
-                    item.setText(cell_text)
-                    count += 1
+                target_index = model.index(row, col)
+                model.setData(target_index, cell_text)
+                count += 1
         
         logger.info(f"Pasted {count} cells")
         return count
     
-    def find_text(self, table: QTableWidget, text: str, 
+    def find_text(self, table: QTableView, text: str, 
                   case_sensitive: bool, whole_words: bool,
                   find_next: bool = False) -> Optional[Tuple[int, int]]:
-        """Find text in table"""
+        """Find text in the model associated with a QTableView."""
         if not text:
             return None
         
-        # Prepare search pattern
-        pattern = text
+        model = table.model()
+        
+        pattern = re.escape(text)
         if whole_words:
-            pattern = r'\b' + re.escape(text) + r'\b'
-        else:
-            pattern = re.escape(text)
+            pattern = r'\b' + pattern + r'\b'
         
         flags = 0 if case_sensitive else re.IGNORECASE
         
-        # Determine start position
+        start_row, start_col = (0, 0)
         if find_next:
             start_row, start_col = self._last_search_pos
-            start_col += 1  # Start from next cell
-        else:
-            start_row, start_col = 0, 0
+            start_col += 1
         
-        # Search from current position
-        for row in range(start_row, table.rowCount()):
+        # Search from start position to the end
+        for row in range(start_row, model.rowCount()):
             col_start = start_col if row == start_row else 0
-            for col in range(col_start, table.columnCount()):
-                item = table.item(row, col)
-                if item and re.search(pattern, item.text(), flags):
-                    table.setCurrentCell(row, col)
+            for col in range(col_start, model.columnCount()):
+                index = model.index(row, col)
+                cell_data = model.data(index) or ""
+                if re.search(pattern, cell_data, flags):
+                    table.setCurrentIndex(index)
                     self._last_search_pos = (row, col)
                     return (row, col)
-        
-        # Wrap around search
-        if find_next and (start_row > 0 or start_col > 0):
+
+        # Wrap-around search from the beginning to the start position
+        if find_next:
             for row in range(0, start_row + 1):
-                col_end = start_col if row == start_row else table.columnCount()
+                col_end = start_col if row == start_row else model.columnCount()
                 for col in range(0, col_end):
-                    item = table.item(row, col)
-                    if item and re.search(pattern, item.text(), flags):
-                        table.setCurrentCell(row, col)
+                    index = model.index(row, col)
+                    cell_data = model.data(index) or ""
+                    if re.search(pattern, cell_data, flags):
+                        table.setCurrentIndex(index)
                         self._last_search_pos = (row, col)
                         return (row, col)
         
         return None
     
-    def find_all(self, table: QTableWidget, text: str,
+    def find_all(self, table: QTableView, text: str,
                  case_sensitive: bool, whole_words: bool) -> int:
-        """Find all occurrences of text"""
+        """Find all occurrences and select them in the QTableView."""
         if not text:
             return 0
         
-        # Prepare search pattern
-        pattern = text
+        model = table.model()
+        selection_model = table.selectionModel()
+        
+        pattern = re.escape(text)
         if whole_words:
-            pattern = r'\b' + re.escape(text) + r'\b'
-        else:
-            pattern = re.escape(text)
+            pattern = r'\b' + pattern + r'\b'
         
         flags = 0 if case_sensitive else re.IGNORECASE
         
-        # Clear selection
-        table.clearSelection()
+        selection_model.clear()
         
-        # Search all cells
         count = 0
-        for row in range(table.rowCount()):
-            for col in range(table.columnCount()):
-                item = table.item(row, col)
-                if item and re.search(pattern, item.text(), flags):
-                    item.setSelected(True)
+        for row in range(model.rowCount()):
+            for col in range(model.columnCount()):
+                index = model.index(row, col)
+                cell_data = model.data(index) or ""
+                if re.search(pattern, cell_data, flags):
+                    # Select the matching cell
+                    selection_model.select(index, QItemSelectionModel.Select)
                     count += 1
         
         logger.info(f"Found {count} occurrences")
         return count
-    
-    def replace_current(self, table: QTableWidget, find_text: str,
-                       replace_text: str, case_sensitive: bool,
-                       whole_words: bool) -> bool:
-        """Replace current occurrence"""
-        current_item = table.currentItem()
-        if not current_item or not current_item.isSelected():
-            return False
-        
-        # Prepare search pattern
-        pattern = find_text
-        if whole_words:
-            pattern = r'\b' + re.escape(find_text) + r'\b'
-        else:
-            pattern = re.escape(find_text)
-        
-        flags = 0 if case_sensitive else re.IGNORECASE
-        
-        # Check if current item matches
-        if re.search(pattern, current_item.text(), flags):
-            new_text = re.sub(pattern, replace_text, current_item.text(), flags=flags)
-            current_item.setText(new_text)
-            return True
-        
-        return False
-    
-    def replace_all(self, table: QTableWidget, find_text: str,
+
+    def replace_all(self, table: QTableView, find_text: str,
                    replace_text: str, case_sensitive: bool,
                    whole_words: bool) -> int:
-        """Replace all occurrences"""
+        """Replace all occurrences in the model."""
         if not find_text:
             return 0
         
-        # Prepare search pattern
-        pattern = find_text
+        model = table.model()
+        
+        pattern = re.escape(find_text)
         if whole_words:
-            pattern = r'\b' + re.escape(find_text) + r'\b'
-        else:
-            pattern = re.escape(find_text)
+            pattern = r'\b' + pattern + r'\b'
         
         flags = 0 if case_sensitive else re.IGNORECASE
         
-        # Replace in all cells
         count = 0
-        for row in range(table.rowCount()):
-            for col in range(table.columnCount()):
-                item = table.item(row, col)
-                if item and re.search(pattern, item.text(), flags):
-                    new_text = re.sub(pattern, replace_text, item.text(), flags=flags)
-                    item.setText(new_text)
+        for row in range(model.rowCount()):
+            for col in range(model.columnCount()):
+                index = model.index(row, col)
+                cell_data = model.data(index) or ""
+                if re.search(pattern, cell_data, flags):
+                    new_text = re.sub(pattern, replace_text, cell_data, flags=flags)
+                    model.setData(index, new_text)
                     count += 1
         
         logger.info(f"Replaced {count} occurrences")

@@ -24,33 +24,30 @@ logger = logging.getLogger(__name__)
 def main():
     """Main application entry point"""
     try:
-        # Create Qt application
+
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
         app = QApplication(sys.argv)
         app.setStyle('Fusion')
         
-        # Set application metadata
-        app.setOrganizationName("CSVViewer")
+        app.setOrganizationName("WorkFusion")
         app.setApplicationName("CSV Table Viewer")
         app.setApplicationDisplayName("CSV Table Viewer")
         
-        # High DPI support
         app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
         app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
-        
-        # Configure platform-specific settings
+
         configure_platform_specific()
-        
-        # Initialize application settings
+
         settings = AppSettings.instance()
         settings.load()
-        
-        # Create and show main window
+
         window = MainWindow()
         window.show()
         
         logger.info("Application started successfully")
-        
-        # Run event loop
+
         return app.exec_()
         
     except Exception as e:

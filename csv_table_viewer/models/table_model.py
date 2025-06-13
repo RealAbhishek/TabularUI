@@ -15,7 +15,7 @@ class TableModel(QAbstractTableModel):
     def __init__(self, csv_model: CSVModel, parent=None):
         super().__init__(parent)
         self._csv_model = csv_model
-        self._csv_model.attach(self._on_data_changed)
+        self._csv_model.attach(self._on_data_changed)   
     
     def _on_data_changed(self) -> None:
         """Handle data changes from CSV model"""
@@ -47,17 +47,7 @@ class TableModel(QAbstractTableModel):
         
         elif role == Qt.ItemDataRole.AccessibleTextRole:
             return f"Cell_{row+1}_{col+1}"
-        
-        elif role == Qt.ItemDataRole.BackgroundRole:
-            # Alternating row colors
-            if row % 2 == 0:
-                return QColor("#1e1e1e")
-            else:
-                return QColor("#2d2d2d")
-        
-        elif role == Qt.ItemDataRole.ForegroundRole:
-            return QColor("#d4d4d4")
-        
+
         return None
 
     def setData(self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
