@@ -86,4 +86,4 @@ class TableModel(QAbstractTableModel):
         if not index.isValid():
             return Qt.ItemFlags()        # No flags for invalid index
         # selected, enabled, and edited.
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        return (Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable)
